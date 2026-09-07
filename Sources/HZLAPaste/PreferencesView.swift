@@ -7,6 +7,9 @@ struct PreferencesView: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var showInDock = AppSettings.showInDock
     @State private var fetchLinkPreviews = AppSettings.fetchLinkPreviews
+    @State private var snippetExpansionEnabled = AppSettings.snippetExpansionEnabled
+    @State private var archiveAfterDays = AppSettings.archiveAfterDays
+    @State private var deleteAfterDays = AppSettings.deleteAfterDays
     @State private var excluded = ExcludedApps.list
 
     var body: some View {
@@ -28,6 +31,33 @@ struct PreferencesView: View {
 
             Stepper(value: $historyLimit, in: 20...2000, step: 20) {
                 Label("History size: \(historyLimit)", systemImage: "clock.arrow.circlepath")
+            }
+
+            Toggle(isOn: $snippetExpansionEnabled) { Label("Enable snippet expansion", systemImage: "text.badge.plus") }
+                .onChange(of: snippetExpansionEnabled) { AppSettings.snippetExpansionEnabled = snippetExpansionEnabled }
+
+            Section {
+                Stepper(value: $archiveAfterDays, in: 1...90) {
+                    Label("Archive after \(archiveAfterDays) day\(archiveAfterDays == 1 ? "" : "s")", systemImage: "archivebox")
+                }
+                .onChange(of: archiveAfterDays) {
+                    AppSettings.archiveAfterDays = archiveAfterDays
+                    if deleteAfterDays <= archiveAfterDays { deleteAfterDays = archiveAfterDays + 1 }
+                }
+
+                Stepper(value: $deleteAfterDays, in: 2...365) {
+                    Label("Delete forever after \(deleteAfterDays) days", systemImage: "trash")
+                }
+                .onChange(of: deleteAfterDays) {
+                    deleteAfterDays = max(deleteAfterDays, archiveAfterDays + 1)
+                    AppSettings.deleteAfterDays = deleteAfterDays
+                }
+            } header: {
+                Label("Clipboard retention", systemImage: "clock.badge.exclamationmark")
+            } footer: {
+                Text("Pinned items are never archived or deleted. Storage is always encrypted at rest.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.silverDim)
             }
 
             Section {

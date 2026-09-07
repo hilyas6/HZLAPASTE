@@ -29,9 +29,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let mainViewModel = MainViewModel()
 
     private let store = ClipboardStore()
+    private let snippetStore = SnippetStore()
     private lazy var monitor = ClipboardMonitor(store: store)
     private lazy var panel = HistoryPanel(store: store, monitor: monitor)
     private lazy var hotKeyManager = HotKeyManager { [weak self] in self?.togglePanel() }
+    private lazy var snippetExpander = SnippetExpander(snippetStore: snippetStore, monitor: monitor)
+    private var retentionTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = ForegroundAppTracker.shared // start tracking immediately
@@ -39,6 +42,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         monitor.start()
         hotKeyManager.register()
         panel.onOpenPreferences = { [weak self] in self?.openPreferences() }
+
+        store.performRetentionSweep()
+        retentionTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.store.performRetentionSweep() }
+        }
+
+        // Safe to call even without Accessibility yet — it no-ops and we retry
+        // opportunistically whenever the bar opens, so granting permission later
+        // (in the same run) doesn't require restarting the app.
+        snippetExpander.start()
     }
 
     /// Fired when the Dock icon is clicked with no HZLAPaste windows open — the
@@ -65,8 +78,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let pinned = store.items.filter { $0.pinned }
-        let recent = store.items.filter { !$0.pinned }.prefix(Self.recentCapInMenu)
+        let active = store.items.filter { $0.archivedAt == nil }
+        let pinned = active.filter { $0.pinned }
+        let recent = active.filter { !$0.pinned }.prefix(Self.recentCapInMenu)
 
         if pinned.isEmpty && recent.isEmpty {
             let empty = NSMenuItem(title: "No clipboard history yet", action: nil, keyEquivalent: "")
@@ -82,6 +96,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(withTitle: "Show History (⌘⇧V)", action: #selector(togglePanel), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Snippets…", action: #selector(openSnippets), keyEquivalent: "").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",").target = self
         menu.addItem(withTitle: "Clear Unpinned History", action: #selector(clearHistory), keyEquivalent: "").target = self
@@ -132,12 +147,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func togglePanel() {
         panel.isVisible ? panel.dismiss() : panel.show()
+        snippetExpander.start() // opportunistic retry in case Accessibility was just granted
     }
 
     @objc private func openPreferences() {
-        mainViewModel.selectedTab = .preferences
+        openMainWindow(tab: .preferences)
+    }
+
+    @objc private func openSnippets() {
+        openMainWindow(tab: .snippets)
+    }
+
+    private func openMainWindow(tab: MainTab) {
+        mainViewModel.selectedTab = tab
         if mainWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: MainView(viewModel: mainViewModel)))
+            let window = NSWindow(contentViewController: NSHostingController(
+                rootView: MainView(viewModel: mainViewModel, snippetStore: snippetStore, clipboardStore: store)
+            ))
             window.title = "HZLAPaste"
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
             window.titlebarAppearsTransparent = true

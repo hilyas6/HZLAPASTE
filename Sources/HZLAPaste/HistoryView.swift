@@ -25,8 +25,9 @@ final class HistoryViewModel: ObservableObject {
     }
 
     var filtered: [ClipItem] {
-        let pinned = store.items.filter { $0.pinned }
-        let unpinned = store.items.filter { !$0.pinned }
+        let active = store.items.filter { $0.archivedAt == nil } // archived items live in the Archive tab, not the bar
+        let pinned = active.filter { $0.pinned }
+        let unpinned = active.filter { !$0.pinned }
         var items = (pinned + unpinned).filtered(query: query)
         if let kindFilter {
             items = items.filter { $0.kind == kindFilter }
@@ -193,6 +194,16 @@ struct HistoryView: View {
                 .onExitCommand { viewModel.onEscape() }
 
             FilterDock(selected: $viewModel.kindFilter)
+
+            Button(action: viewModel.onOpenPreferences) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Theme.silverDim)
+                    .frame(width: 30, height: 30)
+            }
+            .buttonStyle(.plain)
+            .background(.thinMaterial, in: Circle())
+            .help("Settings (⌘,)")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)

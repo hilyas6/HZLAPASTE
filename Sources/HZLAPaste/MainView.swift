@@ -2,12 +2,16 @@ import SwiftUI
 import AppKit
 
 enum MainTab: String, CaseIterable, Identifiable {
+    case snippets = "Snippets"
+    case archive = "Archive"
     case preferences = "Preferences"
     case version = "Version"
     var id: String { rawValue }
 
     var symbol: String {
         switch self {
+        case .snippets: return "text.badge.plus"
+        case .archive: return "archivebox"
         case .preferences: return "gearshape"
         case .version: return "info.circle"
         }
@@ -19,10 +23,13 @@ final class MainViewModel: ObservableObject {
     @Published var selectedTab: MainTab = .preferences
 }
 
-/// The clipboard bar (⌘⇧V) is the app's primary surface — this window is just
-/// Preferences/Version, reached via ⌘, from the bar or the menu bar item.
+/// The clipboard bar (⌘⇧V) is the app's primary surface — this window holds
+/// everything else (Snippets, Archive, Preferences, Version), reached via ⌘,
+/// or the settings button from the bar, or the menu bar item.
 struct MainView: View {
     @ObservedObject var viewModel: MainViewModel
+    @ObservedObject var snippetStore: SnippetStore
+    @ObservedObject var clipboardStore: ClipboardStore
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +37,8 @@ struct MainView: View {
             Divider().background(Theme.gold.opacity(0.25))
 
             switch viewModel.selectedTab {
+            case .snippets: SnippetsView(store: snippetStore)
+            case .archive: ArchiveView(store: clipboardStore)
             case .preferences: PreferencesView()
             case .version: VersionView()
             }
