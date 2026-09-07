@@ -1,0 +1,13 @@
+# Swift Package Manager build artifacts
+.build/
+.swiftpm/
+
+# Packaged app (produced by build.sh — rebuild locally, don't commit binaries)
+HZLAPaste.app/
+
+# macOS / editor cruft
+.DS_Store
+.vscode/
+
+# Claude Code local session state
+.claude/
