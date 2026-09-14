@@ -1,5 +1,9 @@
 # HZLAPaste
 
+[![GitHub release](https://img.shields.io/github/v/release/hilyas6/HZLAPASTE)](https://github.com/hilyas6/HZLAPASTE/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/hilyas6/HZLAPASTE/total)](https://github.com/hilyas6/HZLAPASTE/releases)
+[![License: MIT](https://img.shields.io/github/license/hilyas6/HZLAPASTE)](LICENSE)
+
 A native macOS clipboard manager: a Raycast/Paste-style history bar, keyword
 text expansion, link previews, and encrypted-at-rest storage — built with
 Swift and SwiftUI.
@@ -69,7 +73,7 @@ the data.
 ### Option A — DMG (easiest)
 1. [Download HZLAPaste.dmg](https://github.com/hilyas6/HZLAPASTE/releases/latest/download/HZLAPaste.dmg) and double-click it to mount.
 2. Drag **HZLAPaste** into **Applications**.
-3. Launch it from Applications (first launch: right-click → Open, since it's locally signed rather than notarized by Apple).
+3. Launch it — see [Opening an unsigned app](#opening-an-unsigned-app) below, since macOS will otherwise refuse to open it.
 
 ### Option B — Build from source
 ```bash
@@ -85,6 +89,22 @@ To rebuild the `.dmg` installer instead:
 ```bash
 ./make-dmg.sh
 ```
+
+### Opening an unsigned app
+HZLAPaste is signed with a local development certificate, not an Apple
+Developer ID (that's a $99/year subscription this project isn't paying for),
+so it isn't notarized. macOS Gatekeeper will block it the first time with
+"Apple could not verify... is free of malware" or, on older macOS, "from an
+unidentified developer." To open it anyway:
+
+1. **Right-click** (or Control-click) **HZLAPaste.app** in Applications and choose **Open** — then **Open** again in the confirmation dialog. You only need to do this once; after that it launches normally.
+2. If that option doesn't appear, go to **System Settings → Privacy & Security**, scroll to the **Security** section, and click **Open Anyway** next to the HZLAPaste warning.
+3. If macOS instead says the app **"is damaged and can't be opened"** (Gatekeeper's more aggressive quarantine flag), clear it from Terminal:
+   ```bash
+   xattr -cr /Applications/HZLAPaste.app
+   ```
+
+This is normal for indie/open-source Mac apps distributed outside the App Store without notarization — the source is right here in this repo if you'd rather verify and build it yourself with `./build.sh`.
 
 ### Permissions
 On first use of a feature, macOS will prompt for:
