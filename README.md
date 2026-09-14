@@ -92,6 +92,10 @@ On first use of a feature, macOS will prompt for:
 
 Nothing else is needed — clipboard monitoring itself uses no private APIs and needs no permission.
 
+## Releases
+
+Every version is published on the [Releases page](https://github.com/hilyas6/HZLAPASTE/releases), each with a signed `HZLAPaste.dmg` attached. The DMG link above always points at the latest one.
+
 ## Usage
 
 | Action | Shortcut |
