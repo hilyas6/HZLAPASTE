@@ -67,7 +67,7 @@ the data.
 ## Installation
 
 ### Option A — DMG (easiest)
-1. Double-click `HZLAPaste.dmg` to mount it.
+1. [Download HZLAPaste.dmg](https://github.com/hilyas6/HZLAPASTE/releases/latest/download/HZLAPaste.dmg) and double-click it to mount.
 2. Drag **HZLAPaste** into **Applications**.
 3. Launch it from Applications (first launch: right-click → Open, since it's locally signed rather than notarized by Apple).
 
